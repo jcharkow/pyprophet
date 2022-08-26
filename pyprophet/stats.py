@@ -142,8 +142,13 @@ def pemp(stat, stat0):
     m = len(stat)
     m0 = len(stat0)
 
-    statc = np.concatenate((stat, stat0))
-    v = np.array([True] * m + [False] * m0)
+    # ------- orginaly:
+    #statc = np.concatenate((stat, stat0))
+    #v = np.array([True] * m + [False] * m0)
+    # ------- switching the positions of Targets and decoys to avoid pi0 becomes negetive
+    statc = np.concatenate((stat0, stat))
+    v = np.array( [False] * m0 + [True] * m)
+    # -------
     perm = np.argsort(-statc, kind="mergesort")  # reversed sort, mergesort is stable
     v = v[perm]
 
@@ -155,6 +160,18 @@ def pemp(stat, stat0):
     ranks = np.floor(scipy.stats.rankdata(-stat)).astype(int) - 1
     p = p[ranks]
     p[p <= 1.0 / m0] = 1.0 / m0
+    ############ but this methos cause many diferent scores tp have same pvalues! why not rank / m+m0?
+    # ---------- my method
+    my_method = False
+    if my_method:
+        RANKS = scipy.stats.rankdata(-statc)
+        Tranks = scipy.stats.rankdata(-stat)
+        CompR = RANKS[m0:] - Tranks    # index depends on how to make the combined vector, decoy first or target; if decoys first (like my version [m0:] to count rank of Targets, if Target frist (like George method), then [:m] to have rank of Targets)
+        CompRmax = scipy.stats.rankdata(CompR, method='max')
+        CompRmin = scipy.stats.rankdata(CompR, method='min')
+        addR = (Tranks - CompRmin + 0.5) / (CompRmax - CompRmin + 1)
+        p = (CompR + addR) / float(m0)
+        p[p>1] = 1
 
     return p
 

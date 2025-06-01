@@ -183,23 +183,14 @@ def prepare_data_table(
         tg_map[tg_id] = i
     tg_num_ids = [tg_map[tg_id] for tg_id in tg_ids]
 
-    data = dict(
-        tg_id=tg_ids.values,
-        tg_num_id=tg_num_ids,
-        is_decoy=table[decoy_name].values.astype(bool),
-        is_top_peak=empty_col,
-        is_train=empty_none_col,
-        main_score=table[main_score_name].values,
-    )
+    df = pd.DataFrame()
+    df['tg_id'] = tg_ids
+    df['tg_num_id'] = tg_num_ids
+    df['is_decoy'] = table[decoy_name].values.astype(bool)
+    df['is_top_peak'] = 0
+    df['is_train'] = None
+    df['main_score'] = table[main_score_name]
 
-    column_names = [
-        "tg_id",
-        "tg_num_id",
-        "is_decoy",
-        "is_top_peak",
-        "is_train",
-        "main_score",
-    ]
     used_var_column_names = []
     used_var_column_ids = []
     for i, v in enumerate(var_column_names):
@@ -214,14 +205,9 @@ def prepare_data_table(
             used_var_column_names.append(v)
             used_var_column_ids.append(col_name)
 
-        data[col_name] = col_data
-        column_names.append(col_name)
+        df[col_name] = col_data
 
-    data["classifier_score"] = empty_col
-    column_names.append("classifier_score")
-
-    # build data frame:
-    df = pd.DataFrame(data, columns=column_names)
+    df["classifier_score"] = empty_col
 
     all_score_columns = (main_score_name,) + tuple(used_var_column_names)
     df = cleanup_and_check(df)
@@ -294,7 +280,7 @@ def update_chosen_main_score_in_table(train, score_columns, use_as_main_score):
 class Experiment(object):
     @profile
     def __init__(self, df):
-        self.df = df.copy()
+        self.df = df
 
     def log_summary(self):
         logger.info("Summary of input data:")

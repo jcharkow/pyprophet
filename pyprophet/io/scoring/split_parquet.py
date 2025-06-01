@@ -104,10 +104,10 @@ class SplitParquetReader(BaseSplitParquetReader):
             )
 
     def _fetch_ms2_features(self, con, feature_cols):
-        cols_sql = ", ".join([f"p.{col}" for col in feature_cols])
-        query = f"""SELECT p.RUN_ID, p.PRECURSOR_ID, p.PROTEIN_ID, p.PRECURSOR_CHARGE, p.FEATURE_ID,
-                        p.EXP_RT, p.PRECURSOR_DECOY AS DECOY, {cols_sql},
-                        COALESCE(t.TRANSITION_COUNT, 0) AS TRANSITION_COUNT,
+        cols_sql = ", ".join([f"CAST(p.{col} AS FLOAT) AS {col}" for col in feature_cols])
+        query = f"""SELECT p.RUN_ID, p.PRECURSOR_ID, p.PROTEIN_ID, CAST(p.PRECURSOR_CHARGE as TINYINT) as PRECURSOR_CHARGE, p.FEATURE_ID,
+                        CAST(p.EXP_RT as FLOAT) AS EXP_RT, CAST(p.PRECURSOR_DECOY AS BOOLEAN) AS DECOY, {cols_sql},
+                        CAST(COALESCE(t.TRANSITION_COUNT, 0) AS TINYINT) AS TRANSITION_COUNT,
                         p.RUN_ID || '_' || p.PRECURSOR_ID AS GROUP_ID
                     FROM precursors p
                     LEFT JOIN (
